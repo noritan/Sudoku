@@ -1,18 +1,15 @@
 import tkinter
 
-TILE_WIDTH = 30
-TILE_HEIGHT = 30
-TILE_FONT = ("monospace", 24)
+TILE_WIDTH = 36
+TILE_HEIGHT = 36
+TILE_FONT = ("monospace", 28)
 TILE_GAP = 2
 TILE_GROUP = 3
 TILE_LENGTH = TILE_GROUP * TILE_GROUP
 TILE_AVAILABLE = frozenset({i+1 for i in range(TILE_LENGTH)})
 CANVAS_WIDTH = TILE_WIDTH * TILE_LENGTH + TILE_GAP
 CANVAS_HEIGHT = TILE_HEIGHT * TILE_LENGTH + TILE_GAP
-WINDOW_WIDTH = 640
-WINDOW_HEIGHT = 480
-CANVAS_X = (WINDOW_WIDTH - CANVAS_WIDTH) / 2
-CANVAS_Y = 30
+PAD = 20
 
 # square class
 class Square:
@@ -21,7 +18,7 @@ class Square:
         self.col = col
         self.row = row
         self.status = "free"
-        self.number = [] # unassigned
+        self.number = None # unassigned
     
     # Assign a number to the Square
     def assign(self, number, status="assigned"):
@@ -149,11 +146,14 @@ def exampleBoard():
 # Create a window
 root = tkinter.Tk()
 root.title("Sudoku")
-root.minsize(WINDOW_WIDTH, WINDOW_HEIGHT)
+root.option_add("*font", ["メイリオ", 14])
+
+# Frame in the root
+frame=tkinter.Frame()
 
 # Create a canvas
-canvas = tkinter.Canvas(root, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, bd=0, highlightthickness=0, relief="ridge")
-canvas.place(x=CANVAS_X, y=CANVAS_Y)
+canvas = tkinter.Canvas(frame, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, bd=0, highlightthickness=0, relief="ridge")
+canvas.grid(row=0, column=0, columnspan=2, padx=PAD, pady=PAD)
 canvas.create_rectangle(
     0,
     0,
@@ -204,11 +204,20 @@ for i in range(0, TILE_LENGTH + 1, TILE_GROUP) :
     )
 
 # Solve button
-solveButton = tkinter.Button(root, text="SOLVE")
-solveButton.place(x=WINDOW_WIDTH/2, y=CANVAS_Y*2+CANVAS_HEIGHT)
+solveButton = tkinter.Button(frame, text="SOLVE")
+solveButton.grid(row=1, column=0, columnspan=2, padx=PAD, pady=PAD)
+
+# Assign field and button
+assignEntry = tkinter.Entry(frame, width=2)
+assignEntry.grid(row=2, column=0, padx=PAD, pady=PAD)
+assignButton = tkinter.Button(frame, text="ASSIGN")
+assignButton.grid(row=2, column=1, padx=PAD, pady=PAD)
+
+frame.pack()
 
 # Callback from canvas
 def canvasOnClick(event):
+    global pivot
     x = event.x + TILE_GAP
     y = event.y + TILE_GAP
 
@@ -220,10 +229,21 @@ def canvasOnClick(event):
         return
     if x_frac < TILE_GAP * 3 or y_frac < TILE_GAP * 3:
         print("Farc %d, %d" % (x_frac, y_frac))
+        pivot = None
         return
     print("Clicked %d, %d" % (col, row))
+    setPivot(row, col)
 
 canvas.bind("<Button-1>", canvasOnClick)
+
+def setPivot(row, col):
+    global pivot
+    pivot = (row, col)
+    square = board[row][col]
+    number = square.number
+    assignEntry.delete(0, tkinter.END)
+    if number is not None:
+        assignEntry.insert(0, str(number))
 
 # add negative flag in a group
 def addNegative(square):
@@ -310,6 +330,18 @@ def solveButtonOnClick():
     root.update()
 
 solveButton["command"]=solveButtonOnClick
+
+# Callback from ASSIGN button
+def assignButtonOnClick():
+    global pivot
+    if pivot is not None:
+        number = int(assignEntry.get())
+        square = board[pivot[0]][pivot[1]]
+        square.assign(number)
+        drawBoard(board)
+        root.update()
+
+assignButton["command"] = assignButtonOnClick
 
 # Create an example board
 board = exampleBoard()
