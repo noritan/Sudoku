@@ -2,6 +2,7 @@ import tkinter
 
 TILE_WIDTH = 30
 TILE_HEIGHT = 30
+TILE_FONT = ("monospace", 24)
 TILE_GAP = 2
 TILE_GROUP = 3
 TILE_LENGTH = TILE_GROUP * TILE_GROUP
@@ -11,6 +12,85 @@ WINDOW_WIDTH = 640
 WINDOW_HEIGHT = 480
 CANVAS_X = (WINDOW_WIDTH - CANVAS_WIDTH) / 2
 CANVAS_Y = 30
+
+# square class
+class Square:
+    # constructor
+    def __init__(self, col, row):
+        self.col = col
+        self.row = row
+        self.status = "free"
+        self.number = -1 # unassigned
+    
+    # Assign a number to the Square
+    def assign(self, number, status="assigned"):
+        self.number = number
+        self.status = status
+
+    # Unassign number of the Square
+    def unassign(self):
+        self.status = "free"
+
+    # Draw a Square in a color
+    def drawInColor(self, color):
+        canvas.create_text(
+            (self.col + 0.5) * TILE_WIDTH,
+            (self.row + 0.5) * TILE_HEIGHT,
+            text=str(self.number),
+            fill=color,
+            font=TILE_FONT,
+            tag="square"
+        )
+
+    # Draw a Square
+    def draw(self):
+        if self.status == "fixed":
+            self.drawInColor("red")
+        elif self.status == "assigned":
+            self.drawInColor("blue")
+
+# Draw Board
+def drawBoard(board):
+    canvas.delete("square")
+    for row in range(TILE_LENGTH):
+        for col in range(TILE_LENGTH):
+            board[row][col].draw()
+
+# Create initial board
+def initialBoard():
+    board = [[]]*TILE_LENGTH
+    for row in range(TILE_LENGTH):
+        line = [0]*TILE_LENGTH
+        for col in range(TILE_LENGTH):
+            line[col] = Square(col, row)
+        board[row] = line
+    return board
+
+# Initialize with example board
+def exampleBoard():
+    board = initialBoard()
+    board[0][3].assign(3, "fixed")
+    board[0][5].assign(4, "fixed")
+    board[1][4].assign(7, "fixed")
+    board[1][6].assign(9, "fixed")
+    board[2][5].assign(1, "fixed")
+    board[2][7].assign(8, "fixed")   
+    board[3][0].assign(1, "fixed")
+    board[3][6].assign(4, "fixed")
+    board[3][8].assign(7, "fixed")   
+    board[4][1].assign(9, "fixed")
+    board[4][4].assign(6, "fixed")
+    board[4][7].assign(2, "fixed")
+    board[5][0].assign(4, "fixed")
+    board[5][2].assign(5, "fixed")
+    board[5][8].assign(6, "fixed")
+    board[6][1].assign(6, "fixed")
+    board[6][3].assign(2, "fixed")
+    board[7][2].assign(7, "fixed")
+    board[7][4].assign(4, "fixed")
+    board[8][3].assign(8, "fixed")
+    board[8][5].assign(3, "fixed")
+    return board
 
 # Create a window
 root = tkinter.Tk()
@@ -86,6 +166,12 @@ def canvasOnClick(event):
     print("Clicked %d, %d" % (col, row))
 
 canvas.bind("<Button-1>", canvasOnClick)
+
+# Create an example board
+board = exampleBoard()
+
+# Draw the board
+drawBoard(board)
 
 # the main loop
 root.mainloop()
