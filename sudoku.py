@@ -26,7 +26,8 @@ canvas.create_rectangle(
     CANVAS_WIDTH,
     CANVAS_HEIGHT,
     fill="gray80",
-    width=0
+    width=0,
+    tag="board"
 )
 
 # Gray border lines
@@ -37,14 +38,16 @@ for i in range(TILE_LENGTH + 1) :
         x, 0,
         x, CANVAS_HEIGHT,
         fill=c,
-        width=TILE_GAP
+        width=TILE_GAP,
+        tag="board"
     )
     y = TILE_HEIGHT * i + TILE_GAP * 0.5
     canvas.create_line(
         0, y,
         CANVAS_WIDTH, y,
         fill=c,
-        width=TILE_GAP
+        width=TILE_GAP,
+        tag="board"
     )
 # Black border lines
 c = "black"
@@ -54,15 +57,35 @@ for i in range(0, TILE_LENGTH + 1, TILE_GROUP) :
         x, 0,
         x, CANVAS_HEIGHT,
         fill=c,
-        width=TILE_GAP
+        width=TILE_GAP,
+        tag="board"
     )
     y = TILE_HEIGHT * i + TILE_GAP * 0.5
     canvas.create_line(
         0, y,
         CANVAS_WIDTH, y,
         fill=c,
-        width=TILE_GAP
+        width=TILE_GAP,
+        tag="board"
     )
+
+# Callback from canvas
+def canvasOnClick(event):
+    x = event.x + TILE_GAP
+    y = event.y + TILE_GAP
+
+    col = int(x / TILE_WIDTH)
+    x_frac = x % TILE_WIDTH
+    row = int(y / TILE_HEIGHT)
+    y_frac = y % TILE_HEIGHT
+    if (col < 0 or col >= TILE_LENGTH or row < 0 or row >= TILE_LENGTH):
+        return
+    if x_frac < TILE_GAP * 3 or y_frac < TILE_GAP * 3:
+        print("Farc %d, %d" % (x_frac, y_frac))
+        return
+    print("Clicked %d, %d" % (col, row))
+
+canvas.bind("<Button-1>", canvasOnClick)
 
 # the main loop
 root.mainloop()
