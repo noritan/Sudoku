@@ -93,6 +93,17 @@ def exampleBoard():
         x,x,x,2,x,4,x,x,x,
         x,x,4,x,x,x,1,x,x
     ]
+    Q98 = [
+        x,x,x,x,x,9,x,x,4,
+        x,x,x,x,1,x,x,3,x,
+        x,x,x,2,x,8,x,x,7,
+        3,x,2,x,x,x,6,x,x,
+        x,6,x,x,x,x,x,9,x,
+        x,x,4,x,x,x,1,x,8,
+        5,x,x,6,x,1,x,x,x,
+        x,4,x,x,5,x,x,x,x,
+        7,x,x,3,x,x,x,x,x
+    ]
     Q100 = [
         x,3,x,x,5,x,x,6,x,
         7,x,x,1,x,x,x,x,8,
@@ -104,8 +115,30 @@ def exampleBoard():
         5,x,x,x,x,4,x,x,6,
         x,6,x,x,9,x,x,5,x
     ]
+    Qbaka = [
+        x,x,5,3,x,x,x,x,x,
+        x,x,x,x,x,x,x,x,x,
+        x,x,x,x,1,x,5,x,x,
+        4,x,x,x,x,5,3,x,x,
+        x,x,x,x,x,x,x,x,x,
+        x,x,3,2,x,x,x,8,x,
+        x,6,x,x,x,x,x,x,9,
+        x,x,x,x,x,x,x,x,x,
+        x,x,x,x,x,9,7,x,x
+    ]
+    Qhard = [
+        x,x,5,3,x,x,x,x,x,
+        8,x,x,x,x,x,x,2,x,
+        x,7,x,x,1,x,5,x,x,
+        4,x,x,x,x,5,3,x,x,
+        x,1,x,x,7,x,x,x,6,
+        x,x,3,2,x,x,x,8,x,
+        x,6,x,5,x,x,x,x,9,
+        x,x,4,x,x,x,x,3,x,
+        x,x,x,x,x,9,7,x,x
+    ]
     board = initialBoard()
-    q = Q100
+    q = Q98
     for i in range(len(q)):
         if q[i] != x:
             row = int(i/TILE_LENGTH)
