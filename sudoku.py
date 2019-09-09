@@ -11,6 +11,28 @@ CANVAS_WIDTH = TILE_WIDTH * TILE_LENGTH + TILE_GAP
 CANVAS_HEIGHT = TILE_HEIGHT * TILE_LENGTH + TILE_GAP
 PAD = 20
 
+# board class
+class Board:
+    # constructor
+    def __init__(self, unit):
+        # define board length 
+        self.length = unit * unit
+        # Fill Square on board
+        self.f_square = []
+        for row in range(self.length):
+            for col in range(self.length):
+                self.f_square.append(Square(col, row))
+        # Construct network
+
+    def square(self, col, row):
+        return self.f_square[row][col]
+
+    def draw(self, canvas):
+        canvas.delete("square")
+        for row in range(self.length):
+            for col in range(self.length):
+                self.square(col, row).draw(canvas)
+
 # square class
 class Square:
     # constructor
