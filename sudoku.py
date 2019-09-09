@@ -11,28 +11,6 @@ CANVAS_WIDTH = TILE_WIDTH * TILE_LENGTH + TILE_GAP
 CANVAS_HEIGHT = TILE_HEIGHT * TILE_LENGTH + TILE_GAP
 PAD = 20
 
-# board class
-class Board:
-    # constructor
-    def __init__(self, unit):
-        # define board length 
-        self.length = unit * unit
-        # Fill Square on board
-        self.f_square = []
-        for row in range(self.length):
-            for col in range(self.length):
-                self.f_square.append(Square(col, row))
-        # Construct network
-
-    def square(self, col, row):
-        return self.f_square[row][col]
-
-    def draw(self, canvas):
-        canvas.delete("square")
-        for row in range(self.length):
-            for col in range(self.length):
-                self.square(col, row).draw(canvas)
-
 # square class
 class Square:
     # constructor
@@ -69,6 +47,120 @@ class Square:
             self.drawInColor("red")
         elif self.status == "assigned":
             self.drawInColor("blue")
+
+# cluster class
+class Cluster:
+    #constructor
+    def __init__(self):
+        self.squareList = list()
+
+    def append(self, square):
+        self.squareList.append(square)
+
+# board class
+class Board:
+    # constructor
+    def __init__(self, unit):
+        self.unit = unit
+        # define board length
+        self.length = unit * unit
+        # Fill Square on board
+        self.f_square = list()
+        for row in range(self.length):
+            for col in range(self.length):
+                self.f_square.append(Square(col, row))
+        # Construct group structure
+        self.groups = list()
+        # row group
+        for col in range(self.length):
+            group = list()
+            for row in range(self.length):
+                group.append(self.square(col, row))
+            self.groups.append(group)
+        # column group
+        for row in range(self.length):
+            group = list()
+            for col in range(self.length):
+                group.append(self.square(col, row))
+            self.groups.append(group)
+        # bulk group
+        for cbase in range(0, self.length, self.unit):
+            for rbase in range(0, self.length, self.unit):
+                group = list()
+                for col in range(cbase, cbase + self.unit):
+                    for row in range(rbase, rbase + self.unit):
+                        group.append(self.square(col, row))
+                self.groups.append(group)
+        # Construct horizontal cluster
+        self.hclusterList = list()
+        for row in range(self.length):
+            for cbase in range(0, self.length, self.unit):
+                cluster = Cluster()
+                for col in range(cbase, cbase + self.unit):
+                    cluster.append(self.square(col, row))
+                self.hclusterList.append(cluster)
+                for square in cluster.squareList:
+                    square.hcluster = cluster
+        # Construct vertial cluster
+        self.vclusterList = list()
+        for col in range(self.length):
+            for rbase in range(0, self.length, self.unit):
+                cluster = Cluster()
+                for row in range(rbase, rbase + self.unit):
+                    cluster.append(self.square(col, row))
+                self.vclusterList.append(cluster)
+                for square in cluster.squareList:
+                    square.vcluster = cluster
+        # Construct groupList
+        self.hGroupList = list()
+        for row in range(self.length):
+            group = list()
+            for col in range(self.unit):
+                group.append(self.hclusterList[row * self.unit + col])
+            self.hGroupList.append(group)
+            for cluster in group:
+                cluster.linearGroup = group
+        for rbase in range(0, self.length, self.unit):
+            for col in range(self.unit):
+                group = list()
+                for row in range(rbase, rbase + self.unit):
+                    group.append(self.hclusterList[row * self.unit + col])
+                self.hGroupList.append(group)
+                for cluster in group:
+                    cluster.bulkGroup = group
+        self.vGroupList = list()
+        for col in range(self.length):
+            group = list()
+            for row in range(self.unit):
+                group.append(self.vclusterList[col * self.unit + row])
+            self.vGroupList.append(group)
+            for cluster in group:
+                cluster.linearGroup = group
+        for cbase in range(0, self.length, self.unit):
+            for row in range(self.unit):
+                group = list()
+                for col in range(cbase, cbase + self.unit):
+                    group.append(self.vclusterList[col * self.unit + row])
+                self.vGroupList.append(group)
+                for cluster in group:
+                    cluster.bulkGroup = group
+
+    # return a Square on the board
+    def square(self, col, row):
+        return self.f_square[row*self.length+col]
+
+    # return a serial list of Square
+    def allSquare(self):
+        return self.f_square
+
+    # draw the board on the canvas
+    def draw(self, canvas):
+        canvas.delete("square")
+        for row in range(self.length):
+            for col in range(self.length):
+                self.square(col, row).draw(canvas)
+
+bd = Board(TILE_GROUP)
 
 # Draw Board
 def drawBoard(board):
