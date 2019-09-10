@@ -54,8 +54,16 @@ class Cluster:
     def __init__(self):
         self.squareList = list()
 
+    # append a Square to this Cluster
     def append(self, square):
         self.squareList.append(square)
+
+    # a set of elements never contained in this Cluster
+    def negative(self):
+        negSet = set(TILE_AVAILABLE)
+        for square in self.squareList:
+            negSet &= square.negative()
+        return negSet
 
 # board class
 class Board:
