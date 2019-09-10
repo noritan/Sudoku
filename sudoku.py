@@ -5,7 +5,8 @@ TILE_HEIGHT = 36
 TILE_FONT = ("monospace", 28)
 TILE_GAP = 2
 TILE_GROUP = 3
-TILE_LENGTH = TILE_GROUP * TILE_GROUP
+TILE_UNIT = 3
+TILE_LENGTH = TILE_UNIT * TILE_UNIT
 TILE_AVAILABLE = frozenset({i+1 for i in range(TILE_LENGTH)})
 CANVAS_WIDTH = TILE_WIDTH * TILE_LENGTH + TILE_GAP
 CANVAS_HEIGHT = TILE_HEIGHT * TILE_LENGTH + TILE_GAP
@@ -31,7 +32,7 @@ class Square:
         self.status = "free"
 
     # Draw a Square in a color
-    def drawInColor(self, color):
+    def drawInColor(self, canvas, color):
         canvas.create_text(
             (self.col + 0.5) * TILE_WIDTH,
             (self.row + 0.5) * TILE_HEIGHT,
@@ -42,11 +43,11 @@ class Square:
         )
 
     # Draw a Square
-    def draw(self):
+    def draw(self, canvas):
         if self.status == "fixed":
-            self.drawInColor("red")
+            self.drawInColor(canvas, "red")
         elif self.status == "assigned":
-            self.drawInColor("blue")
+            self.drawInColor(canvas, "blue")
 
 # cluster class
 class Cluster:
@@ -64,6 +65,11 @@ class Cluster:
         for square in self.squareList:
             negSet &= square.negative()
         return negSet
+    
+    # add a number to the negative of cluster member
+    def addNegative(self, number):
+        for square in self.squareList:
+            square.negative.add(number)
 
 # board class
 class Board:
@@ -73,10 +79,10 @@ class Board:
         # define board length
         self.length = unit * unit
         # Fill Square on board
-        self.f_square = list()
+        self.f_squareList = list()
         for row in range(self.length):
             for col in range(self.length):
-                self.f_square.append(Square(col, row))
+                self.f_squareList.append(Square(col, row))
         # Construct group structure
         self.groups = list()
         # row group
@@ -155,11 +161,16 @@ class Board:
 
     # return a Square on the board
     def square(self, col, row):
-        return self.f_square[row*self.length+col]
+        return self.f_squareList[row*self.length+col]
+
+    def squareAt(self, position):
+        (col, row) = position
+        return self.square(col, row)
 
     # return a serial list of Square
-    def allSquare(self):
-        return self.f_square
+    def squareList(self):
+        for square in self.f_squareList:
+            yield square
 
     # draw the board on the canvas
     def draw(self, canvas):
@@ -167,25 +178,6 @@ class Board:
         for row in range(self.length):
             for col in range(self.length):
                 self.square(col, row).draw(canvas)
-
-bd = Board(TILE_GROUP)
-
-# Draw Board
-def drawBoard(board):
-    canvas.delete("square")
-    for row in range(TILE_LENGTH):
-        for col in range(TILE_LENGTH):
-            board[row][col].draw()
-
-# Create initial board
-def initialBoard():
-    board = [[]]*TILE_LENGTH
-    for row in range(TILE_LENGTH):
-        line = [0]*TILE_LENGTH
-        for col in range(TILE_LENGTH):
-            line[col] = Square(col, row)
-        board[row] = line
-    return board
 
 # Initialize with example board
 def exampleBoard():
@@ -256,13 +248,13 @@ def exampleBoard():
         x,x,4,x,x,x,x,3,x,
         x,x,x,x,x,9,7,x,x
     ]
-    board = initialBoard()
+    board = Board(TILE_UNIT)
     q = Q98
     for i in range(len(q)):
         if q[i] != x:
             row = int(i/TILE_LENGTH)
             col = i % TILE_LENGTH
-            board[row][col].assign(q[i], "fixed")
+            board.square(col, row).assign(q[i], "fixed")
     return board
 
 # Create a window
@@ -354,14 +346,14 @@ def canvasOnClick(event):
         pivot = None
         return
     print("Clicked %d, %d" % (col, row))
-    setPivot(row, col)
+    setPivot(col, row)
 
 canvas.bind("<Button-1>", canvasOnClick)
 
-def setPivot(row, col):
+def setPivot(col, row):
     global pivot
-    pivot = (row, col)
-    square = board[row][col]
+    pivot = (col, row)
+    square = board.squareAt(pivot)
     number = square.number
     assignEntry.delete(0, tkinter.END)
     if number is not None:
@@ -369,48 +361,20 @@ def setPivot(row, col):
 
 # add negative flag in a group
 def addNegative(square):
-    global groups
-    square.negative = set(TILE_AVAILABLE)
-    for group in groups:
-        if square in group:
-            for member in group:
-                member.negative.add(square.number)
+    square.negative |= (TILE_AVAILABLE)
+    number = square.number
+    for cluster in [square.hcluster, square.vcluster]:
+        for g in [cluster.linearGroup, cluster.bulkGroup]:
+            for c in g:
+                c.addNegative(number)
 
 # Solver function
 def solve():
-    # Serial square list
-    allSquare = []
-    for line in board:
-        for square in line:
-            allSquare.append(square)
-    # Construct group structure
-    global groups
-    groups = []
-    # row group
-    for col in range(TILE_LENGTH):
-        group = []
-        for row in range(TILE_LENGTH):
-            group.append(board[row][col])
-        groups.append(list(group))
-    # column group
-    for row in range(TILE_LENGTH):
-        group = []
-        for col in range(TILE_LENGTH):
-            group.append(board[row][col])
-        groups.append(group)
-    # sector group
-    for cbase in range(0, TILE_LENGTH, TILE_GROUP):
-        for rbase in range(0, TILE_LENGTH, TILE_GROUP):
-            group = []
-            for col in range(cbase,cbase+TILE_GROUP):
-                for row in range(rbase,rbase+TILE_GROUP):
-                    group.append(board[row][col])
-            groups.append(group)
     # Clear all negative set
-    for square in allSquare:
+    for square in board.squareList():
         square.negative = set()
     # initialize negative set
-    for square in allSquare:
+    for square in board.squareList():
         if square.status == "fixed":
             square.negative = set(TILE_AVAILABLE)
             addNegative(square)
@@ -422,7 +386,7 @@ def solve():
     while not solved:
         solved = True
         # assign number to last positive
-        for square in allSquare:
+        for square in board.squareList():
             if len(square.negative) == TILE_LENGTH - 1:
                 square.assign((set(TILE_AVAILABLE) - square.negative).pop())
                 print("Last positive %d at (%d,%d)" % (square.number, square.col, square.row))
@@ -430,7 +394,7 @@ def solve():
                 solved = False
         # scan last positive in a group
         for number in TILE_AVAILABLE:
-            for group in groups:
+            for group in board.groups:
                 nNegative = 0
                 for square in group:
                     if number in square.negative:
@@ -448,7 +412,7 @@ def solve():
 # Callback from SOLVE button
 def solveButtonOnClick():
     solve()
-    drawBoard(board)
+    board.draw(canvas)
     root.update()
 
 solveButton["command"]=solveButtonOnClick
@@ -458,9 +422,8 @@ def assignButtonOnClick():
     global pivot
     if pivot is not None:
         number = int(assignEntry.get())
-        square = board[pivot[0]][pivot[1]]
-        square.assign(number)
-        drawBoard(board)
+        board.squareAt(pivot).assign(number)
+        board.draw(canvas)
         root.update()
 
 assignButton["command"] = assignButtonOnClick
@@ -469,7 +432,7 @@ assignButton["command"] = assignButtonOnClick
 board = exampleBoard()
 
 # Draw the board
-drawBoard(board)
+board.draw(canvas)
 
 # the main loop
 root.mainloop()
