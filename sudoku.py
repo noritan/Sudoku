@@ -53,23 +53,28 @@ class Square:
 class Cluster:
     #constructor
     def __init__(self):
-        self.squareList = list()
+        self.f_squareList = list()
 
     # append a Square to this Cluster
     def append(self, square):
-        self.squareList.append(square)
+        self.f_squareList.append(square)
 
     # a set of elements never contained in this Cluster
     def negative(self):
         negSet = set(TILE_AVAILABLE)
-        for square in self.squareList:
+        for square in self.squareList():
             negSet &= square.negative()
         return negSet
     
     # add a number to the negative of cluster member
     def addNegative(self, number):
-        for square in self.squareList:
+        for square in self.squareList():
             square.negative.add(number)
+    
+    # a list of Square in this Cluster
+    def squareList(self):
+        for square in self.f_squareList:
+            yield square
 
 # board class
 class Board:
@@ -113,7 +118,7 @@ class Board:
                 for col in range(cbase, cbase + self.unit):
                     cluster.append(self.square(col, row))
                 self.hclusterList.append(cluster)
-                for square in cluster.squareList:
+                for square in cluster.squareList():
                     square.hcluster = cluster
         # Construct vertial cluster
         self.vclusterList = list()
@@ -123,7 +128,7 @@ class Board:
                 for row in range(rbase, rbase + self.unit):
                     cluster.append(self.square(col, row))
                 self.vclusterList.append(cluster)
-                for square in cluster.squareList:
+                for square in cluster.squareList():
                     square.vcluster = cluster
         # Construct groupList
         self.hGroupList = list()
@@ -158,6 +163,7 @@ class Board:
                 self.vGroupList.append(group)
                 for cluster in group:
                     cluster.bulkGroup = group
+        self.groupList = self.hGroupList + self.vGroupList
 
     # return a Square on the board
     def square(self, col, row):
@@ -364,9 +370,8 @@ def addNegative(square):
     square.negative |= (TILE_AVAILABLE)
     number = square.number
     for cluster in [square.hcluster, square.vcluster]:
-        for g in [cluster.linearGroup, cluster.bulkGroup]:
-            for c in g:
-                c.addNegative(number)
+        for c in cluster.linearGroup + cluster.bulkGroup:
+            c.addNegative(number)
 
 # Solver function
 def solve():
