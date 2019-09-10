@@ -426,8 +426,11 @@ solveButton["command"]=solveButtonOnClick
 def assignButtonOnClick():
     global pivot
     if pivot is not None:
-        number = int(assignEntry.get())
-        board.squareAt(pivot).assign(number)
+        try:
+            number = int(assignEntry.get())
+            board.squareAt(pivot).assign(number)
+        except ValueError:
+            board.squareAt(pivot).unassign()
         board.draw(canvas)
         root.update()
 
