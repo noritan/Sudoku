@@ -76,6 +76,26 @@ class Cluster:
         for square in self.f_squareList:
             yield square
 
+class Group:
+    #constructor
+    def __init__(self):
+        self.f_clusterList = list()
+
+    # append a Cluster to this Group    
+    def append(self, cluster):
+        self.f_clusterList.append(cluster)
+
+    # the list of Cluster in this Group
+    def clusterList(self):
+        for cluster in self.f_clusterList:
+            yield cluster
+
+    # the list of Square in this Group
+    def squareList(self):
+        for cluster in self.clusterList():
+            for square in cluster:
+                yield square
+
 # board class
 class Board:
     # constructor
