@@ -49,6 +49,16 @@ class Square:
         elif self.status == "assigned":
             self.drawInColor(canvas, "blue")
 
+    # Reset negative set
+    def resetNegative(self):
+        self.f_negative = set()
+    
+    def addNegative(self, number):
+        self.f_negative.add(number)
+
+    def negative(self):
+        return self.f_negative
+
 # cluster class
 class Cluster:
     #constructor
@@ -71,7 +81,7 @@ class Cluster:
     # add a number to the negative of cluster member
     def addNegative(self, number):
         for square in self.squareList():
-            square.negative.add(number)
+            square.addNegative(number)
     
     # a list of Square in this Cluster
     def squareList(self):
@@ -380,8 +390,8 @@ def setPivot(col, row):
         assignEntry.insert(0, str(number))
 
 # add negative flag in a group
-def addNegative(square):
-    square.negative |= (TILE_AVAILABLE)
+def negateGroupOf(square):
+    square.negative().update(TILE_AVAILABLE)
     number = square.number
     for cluster in [square.hcluster, square.vcluster]:
         for g in cluster.groupList():
@@ -391,39 +401,37 @@ def addNegative(square):
 def solve():
     # Clear all negative set
     for square in board.squareList():
-        square.negative = set()
+        square.resetNegative()
     # initialize negative set
     for square in board.squareList():
         if square.status == "fixed":
-            square.negative = set(TILE_AVAILABLE)
-            addNegative(square)
+            negateGroupOf(square)
         elif square.status == "assigned":
-            square.negative = set(TILE_AVAILABLE)
-            addNegative(square)
+            negateGroupOf(square)
     # 
     solved = False  # Flag indicating solver completion
     while not solved:
         solved = True
         # assign number to last positive
         for square in board.squareList():
-            if len(square.negative) == TILE_LENGTH - 1:
-                square.assign((set(TILE_AVAILABLE) - square.negative).pop())
+            if len(square.negative()) == TILE_LENGTH - 1:
+                square.assign(set(TILE_AVAILABLE).difference(square.negative()).pop())
                 print("Last positive %d at (%d,%d)" % (square.number, square.col, square.row))
-                addNegative(square)
+                negateGroupOf(square)
                 solved = False
         # scan last positive in a group
         for number in TILE_AVAILABLE:
             for group in board.groupList():
                 nNegative = 0
                 for square in group.squareList():
-                    if number in square.negative:
+                    if number in square.negative():
                         nNegative = nNegative + 1
                 if nNegative == TILE_LENGTH - 1:
                     for square in group.squareList():
-                        if not (number in square.negative):
+                        if not (number in square.negative()):
                             square.assign(number)
                             print("Last in group %d at (%d,%d)" % (square.number, square.col, square.row))
-                            addNegative(square)
+                            negateGroupOf(square)
                             solved = False
     # Solved or no other solutions
     print("SOLVED")
