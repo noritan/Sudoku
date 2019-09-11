@@ -130,23 +130,23 @@ class Board:
             for col in range(self.length):
                 self.f_squareList.append(Square(col, row))
         # Construct horizontal cluster
-        self.hclusterList = list()
+        self.hClusterList = list()
         for row in range(self.length):
             for cbase in range(0, self.length, self.unit):
                 cluster = Cluster()
                 for col in range(cbase, cbase + self.unit):
                     cluster.append(self.square(col, row))
-                self.hclusterList.append(cluster)
+                self.hClusterList.append(cluster)
                 for square in cluster.squareList():
                     square.hcluster = cluster
         # Construct vertial cluster
-        self.vclusterList = list()
+        self.vClusterList = list()
         for col in range(self.length):
             for rbase in range(0, self.length, self.unit):
                 cluster = Cluster()
                 for row in range(rbase, rbase + self.unit):
                     cluster.append(self.square(col, row))
-                self.vclusterList.append(cluster)
+                self.vClusterList.append(cluster)
                 for square in cluster.squareList():
                     square.vcluster = cluster
         # Construct groupList
@@ -154,7 +154,7 @@ class Board:
         for row in range(self.length):
             group = Group()
             for col in range(self.unit):
-                group.append(self.hclusterList[row * self.unit + col])
+                group.append(self.hClusterList[row * self.unit + col])
             self.hGroupList.append(group)
             for cluster in group.clusterList():
                 cluster.linearGroup = group
@@ -162,7 +162,7 @@ class Board:
             for col in range(self.unit):
                 group = Group()
                 for row in range(rbase, rbase + self.unit):
-                    group.append(self.hclusterList[row * self.unit + col])
+                    group.append(self.hClusterList[row * self.unit + col])
                 self.hGroupList.append(group)
                 for cluster in group.clusterList():
                     cluster.bulkGroup = group
@@ -170,7 +170,7 @@ class Board:
         for col in range(self.length):
             group = Group()
             for row in range(self.unit):
-                group.append(self.vclusterList[col * self.unit + row])
+                group.append(self.vClusterList[col * self.unit + row])
             self.vGroupList.append(group)
             for cluster in group.clusterList():
                 cluster.linearGroup = group
@@ -178,7 +178,7 @@ class Board:
             for row in range(self.unit):
                 group = Group()
                 for col in range(cbase, cbase + self.unit):
-                    group.append(self.vclusterList[col * self.unit + row])
+                    group.append(self.vClusterList[col * self.unit + row])
                 self.vGroupList.append(group)
                 for cluster in group.clusterList():
                     cluster.bulkGroup = group
@@ -203,11 +203,19 @@ class Board:
             for col in range(self.length):
                 self.square(col, row).draw(canvas)
     
+    # return combined Group list
     def groupList(self):
         for group in self.hGroupList:
             yield group
         for group in self.vGroupList:
             yield group
+
+    # return combined Cluster list
+    def clusterList(self):
+        for cluster in self.hClusterList:
+            yield cluster
+        for cluster in self.vClusterList:
+            yield cluster
 
 # Initialize with example board
 def exampleBoard():
@@ -255,6 +263,17 @@ def exampleBoard():
         x,x,x,x,x,x,3,x,x,
         5,x,x,x,x,4,x,x,6,
         x,6,x,x,9,x,x,5,x
+    ]
+    Q130 = [
+        x,1,x,6,x,x,x,5,x,
+        7,2,x,x,x,x,x,x,9,
+        x,x,x,x,x,8,x,x,x,
+        3,x,x,x,1,x,6,x,x,
+        x,x,x,2,x,9,x,x,x,
+        x,x,5,x,4,x,x,x,8,
+        x,x,x,1,x,x,x,x,x,
+        5,x,x,x,x,x,x,3,2,
+        x,9,x,x,x,5,x,1,x
     ]
     Qbaka = [
         x,x,5,3,x,x,x,x,x,
@@ -433,6 +452,37 @@ def solve():
                             print("Last in group %d at (%d,%d)" % (square.number, square.col, square.row))
                             negateGroupOf(square)
                             solved = False
+        # scan indirect negative cluster
+        for cluster in board.clusterList():
+            # linear group matching
+            negative = set(TILE_AVAILABLE)
+            for c in cluster.linearGroup.clusterList():
+                if c is not cluster:
+                    negative &= c.negative()
+            positive = negative - cluster.negative()
+            if len(positive) > 0:
+                for c in cluster.bulkGroup.clusterList():
+                    if c is not cluster:
+                        for s in c.squareList():
+                            if len(positive - s.negative()) > 0:
+                                print("Negate %s at bulk(%d,%d)" % (str(positive), s.col, s.row))
+                                s.negative().update(positive)
+                                solved = False
+            # bulk group matching
+            negative = set(TILE_AVAILABLE)
+            for c in cluster.bulkGroup.clusterList():
+                if c is not cluster:
+                    negative &= c.negative()
+            positive = negative - cluster.negative()
+            if len(positive) > 0:
+                for c in cluster.linearGroup.clusterList():
+                    if c is not cluster:
+                        for s in c.squareList():
+                            if len(positive - s.negative()) > 0:
+                                print("Negate %s at linear(%d,%d)" % (str(positive), s.col, s.row))
+                                s.negative().update(positive)
+                                solved = False
+                         
     # Solved or no other solutions
     print("SOLVED")
 
