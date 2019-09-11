@@ -54,6 +54,8 @@ class Cluster:
     #constructor
     def __init__(self):
         self.f_squareList = list()
+        self.linearGroup = None
+        self.bulkGroup = None
 
     # append a Square to this Cluster
     def append(self, square):
@@ -75,6 +77,10 @@ class Cluster:
     def squareList(self):
         for square in self.f_squareList:
             yield square
+    
+    def groupList(self):
+        yield self.linearGroup
+        yield self.bulkGroup
 
 class Group:
     #constructor
@@ -85,6 +91,11 @@ class Group:
     def append(self, cluster):
         self.f_clusterList.append(cluster)
 
+    # add a number to the negative of cluster member
+    def addNegative(self, number):
+        for cluster in self.clusterList():
+            cluster.addNegative(number)
+    
     # the list of Cluster in this Group
     def clusterList(self):
         for cluster in self.f_clusterList:
@@ -93,7 +104,7 @@ class Group:
     # the list of Square in this Group
     def squareList(self):
         for cluster in self.clusterList():
-            for square in cluster:
+            for square in cluster.squareList():
                 yield square
 
 # board class
@@ -131,35 +142,35 @@ class Board:
         # Construct groupList
         self.hGroupList = list()
         for row in range(self.length):
-            group = list()
+            group = Group()
             for col in range(self.unit):
                 group.append(self.hclusterList[row * self.unit + col])
             self.hGroupList.append(group)
-            for cluster in group:
+            for cluster in group.clusterList():
                 cluster.linearGroup = group
         for rbase in range(0, self.length, self.unit):
             for col in range(self.unit):
-                group = list()
+                group = Group()
                 for row in range(rbase, rbase + self.unit):
                     group.append(self.hclusterList[row * self.unit + col])
                 self.hGroupList.append(group)
-                for cluster in group:
+                for cluster in group.clusterList():
                     cluster.bulkGroup = group
         self.vGroupList = list()
         for col in range(self.length):
-            group = list()
+            group = Group()
             for row in range(self.unit):
                 group.append(self.vclusterList[col * self.unit + row])
             self.vGroupList.append(group)
-            for cluster in group:
+            for cluster in group.clusterList():
                 cluster.linearGroup = group
         for cbase in range(0, self.length, self.unit):
             for row in range(self.unit):
-                group = list()
+                group = Group()
                 for col in range(cbase, cbase + self.unit):
                     group.append(self.vclusterList[col * self.unit + row])
                 self.vGroupList.append(group)
-                for cluster in group:
+                for cluster in group.clusterList():
                     cluster.bulkGroup = group
 
     # return a Square on the board
@@ -373,8 +384,8 @@ def addNegative(square):
     square.negative |= (TILE_AVAILABLE)
     number = square.number
     for cluster in [square.hcluster, square.vcluster]:
-        for c in cluster.linearGroup + cluster.bulkGroup:
-            c.addNegative(number)
+        for g in cluster.groupList():
+            g.addNegative(number)
 
 # Solver function
 def solve():
@@ -404,18 +415,16 @@ def solve():
         for number in TILE_AVAILABLE:
             for group in board.groupList():
                 nNegative = 0
-                for cluster in group:
-                    for square in cluster.squareList():
-                        if number in square.negative:
-                            nNegative = nNegative + 1
+                for square in group.squareList():
+                    if number in square.negative:
+                        nNegative = nNegative + 1
                 if nNegative == TILE_LENGTH - 1:
-                    for cluster in group:
-                        for square in cluster.squareList():
-                            if not (number in square.negative):
-                                square.assign(number)
-                                print("Last in group %d at (%d,%d)" % (square.number, square.col, square.row))
-                                addNegative(square)
-                                solved = False
+                    for square in group.squareList():
+                        if not (number in square.negative):
+                            square.assign(number)
+                            print("Last in group %d at (%d,%d)" % (square.number, square.col, square.row))
+                            addNegative(square)
+                            solved = False
     # Solved or no other solutions
     print("SOLVED")
 
