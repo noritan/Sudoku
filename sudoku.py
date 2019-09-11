@@ -88,28 +88,6 @@ class Board:
         for row in range(self.length):
             for col in range(self.length):
                 self.f_squareList.append(Square(col, row))
-        # Construct group structure
-        self.groups = list()
-        # row group
-        for col in range(self.length):
-            group = list()
-            for row in range(self.length):
-                group.append(self.square(col, row))
-            self.groups.append(group)
-        # column group
-        for row in range(self.length):
-            group = list()
-            for col in range(self.length):
-                group.append(self.square(col, row))
-            self.groups.append(group)
-        # bulk group
-        for cbase in range(0, self.length, self.unit):
-            for rbase in range(0, self.length, self.unit):
-                group = list()
-                for col in range(cbase, cbase + self.unit):
-                    for row in range(rbase, rbase + self.unit):
-                        group.append(self.square(col, row))
-                self.groups.append(group)
         # Construct horizontal cluster
         self.hclusterList = list()
         for row in range(self.length):
@@ -163,7 +141,6 @@ class Board:
                 self.vGroupList.append(group)
                 for cluster in group:
                     cluster.bulkGroup = group
-        self.groupList = self.hGroupList + self.vGroupList
 
     # return a Square on the board
     def square(self, col, row):
@@ -184,6 +161,12 @@ class Board:
         for row in range(self.length):
             for col in range(self.length):
                 self.square(col, row).draw(canvas)
+    
+    def groupList(self):
+        for group in self.hGroupList:
+            yield group
+        for group in self.vGroupList:
+            yield group
 
 # Initialize with example board
 def exampleBoard():
@@ -399,18 +382,20 @@ def solve():
                 solved = False
         # scan last positive in a group
         for number in TILE_AVAILABLE:
-            for group in board.groups:
+            for group in board.groupList():
                 nNegative = 0
-                for square in group:
-                    if number in square.negative:
-                        nNegative = nNegative + 1
+                for cluster in group:
+                    for square in cluster.squareList():
+                        if number in square.negative:
+                            nNegative = nNegative + 1
                 if nNegative == TILE_LENGTH - 1:
-                    for square in group:
-                        if not (number in square.negative):
-                            square.assign(number)
-                            print("Last in group %d at (%d,%d)" % (square.number, square.col, square.row))
-                            addNegative(square)
-                            solved = False
+                    for cluster in group:
+                        for square in cluster.squareList():
+                            if not (number in square.negative):
+                                square.assign(number)
+                                print("Last in group %d at (%d,%d)" % (square.number, square.col, square.row))
+                                addNegative(square)
+                                solved = False
     # Solved or no other solutions
     print("SOLVED")
 
