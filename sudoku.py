@@ -4,7 +4,6 @@ TILE_WIDTH = 36
 TILE_HEIGHT = 36
 TILE_FONT = ("monospace", 28)
 TILE_GAP = 2
-TILE_GROUP = 3
 TILE_UNIT = 3
 TILE_LENGTH = TILE_UNIT * TILE_UNIT
 TILE_AVAILABLE = frozenset({i+1 for i in range(TILE_LENGTH)})
@@ -381,7 +380,7 @@ for i in range(TILE_LENGTH + 1) :
     )
 # Black border lines
 c = "black"
-for i in range(0, TILE_LENGTH + 1, TILE_GROUP) :
+for i in range(0, TILE_LENGTH + 1, TILE_UNIT):
     x = TILE_WIDTH * i + TILE_GAP * 0.5
     canvas.create_line(
         x, 0,
