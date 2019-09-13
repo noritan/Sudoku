@@ -425,7 +425,7 @@ def canvasOnClick(event):
     if (col < 0 or col >= TILE_LENGTH or row < 0 or row >= TILE_LENGTH):
         return
     if x_frac < TILE_GAP * 3 or y_frac < TILE_GAP * 3:
-        print("Farc %d, %d" % (x_frac, y_frac))
+        print("Frac %d, %d" % (x_frac, y_frac))
         pivot = None
         return
     print("Clicked (%d, %d) %s" % (col, row, board.square(col,row).negative()))
