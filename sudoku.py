@@ -422,7 +422,7 @@ def canvasOnClick(event):
     x_frac = x % TILE_WIDTH
     row = int(y / TILE_HEIGHT)
     y_frac = y % TILE_HEIGHT
-    if (col < 0 or col >= TILE_LENGTH or row < 0 or row >= TILE_LENGTH):
+    if (col < 0 or col >= board.length or row < 0 or row >= board.length):
         return
     if x_frac < TILE_GAP * 3 or y_frac < TILE_GAP * 3:
         print("Frac %d, %d" % (x_frac, y_frac))
