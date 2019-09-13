@@ -18,8 +18,8 @@ class Square:
     def __init__(self, col, row):
         self.col = col
         self.row = row
-        self.status = "free"
-        self.number = None # unassigned
+        self.unassign()
+        self.resetNegative()
     
     # Assign a number to the Square
     def assign(self, number, status="assigned"):
@@ -30,8 +30,9 @@ class Square:
     # Unassign number of the Square
     def unassign(self):
         self.status = "free"
+        self.number = None
 
-    # Draw a Square in a color
+    # Draw the number in a Square with a color
     def drawInColor(self, canvas, color):
         canvas.create_text(
             (self.col + 0.5) * TILE_WIDTH,
@@ -42,12 +43,40 @@ class Square:
             tag="square"
         )
 
+    # Fill the Square with a color
+    def fillInColor(self, canvas, color):
+        canvas.create_rectangle(
+            (self.col + 0.1) * TILE_WIDTH,
+            (self.row + 0.1) * TILE_HEIGHT,
+            (self.col + 0.9) * TILE_WIDTH,
+            (self.row + 0.9) * TILE_WIDTH,
+            fill=color,
+            width=0,
+            tag="square"
+        )
+
+    SQUARE_COLOR = [
+        "#888888",
+        "#117777",
+        "#336666",
+        "#555555",
+        "#774444",
+        "#993333",
+        "#BB2222",
+        "#DD1111",
+        "#FF0000",
+        "#000000"
+    ]
+
     # Draw a Square
     def draw(self, canvas):
         if self.status == "fixed":
             self.drawInColor(canvas, "red")
         elif self.status == "assigned":
             self.drawInColor(canvas, "blue")
+        else:
+            nNegative = len(self.negative())
+            self.fillInColor(canvas, Square.SQUARE_COLOR[nNegative])
 
     # Reset negative set
     def resetNegative(self):
@@ -217,6 +246,10 @@ class Board:
         for cluster in self.vClusterList:
             yield cluster
 
+    def resetNegative(self):
+        for square in self.squareList():
+            square.resetNegative()
+
 # Initialize with example board
 def exampleBoard():
     x = -1
@@ -298,7 +331,7 @@ def exampleBoard():
         x,x,x,x,x,9,7,x,x
     ]
     board = Board(TILE_UNIT)
-    q = Q98
+    q = Qhard
     for i in range(len(q)):
         if q[i] != x:
             row = int(i/TILE_LENGTH)
@@ -368,7 +401,9 @@ for i in range(0, TILE_LENGTH + 1, TILE_GROUP) :
 
 # Solve button
 solveButton = tkinter.Button(frame, text="SOLVE")
-solveButton.grid(row=1, column=0, columnspan=2, padx=PAD, pady=PAD)
+solveButton.grid(row=1, column=0, padx=PAD, pady=PAD)
+clearButton = tkinter.Button(frame, text="CLEAR")
+clearButton.grid(row=1, column=1, padx=PAD, pady=PAD)
 
 # Assign field and button
 assignEntry = tkinter.Entry(frame, width=2)
@@ -394,8 +429,9 @@ def canvasOnClick(event):
         print("Farc %d, %d" % (x_frac, y_frac))
         pivot = None
         return
-    print("Clicked %d, %d" % (col, row))
+    print("Clicked (%d, %d) %s" % (col, row, board.square(col,row).negative()))
     setPivot(col, row)
+    
 
 canvas.bind("<Button-1>", canvasOnClick)
 
@@ -419,8 +455,7 @@ def negateGroupOf(square):
 # Solver function
 def solve():
     # Clear all negative set
-    for square in board.squareList():
-        square.resetNegative()
+    board.resetNegative()
     # initialize negative set
     for square in board.squareList():
         if square.status == "fixed":
@@ -493,6 +528,17 @@ def solveButtonOnClick():
     root.update()
 
 solveButton["command"]=solveButtonOnClick
+
+# Callback from CLEAR button
+def clearButtonOnClick():
+    for square in board.squareList():
+        if square.status == "assigned":
+            square.unassign()
+    board.resetNegative()
+    board.draw(canvas)
+    root.update()
+
+clearButton["command"] = clearButtonOnClick
 
 # Callback from ASSIGN button
 def assignButtonOnClick():
