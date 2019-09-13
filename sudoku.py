@@ -7,8 +7,6 @@ TILE_GAP = 2
 TILE_UNIT = 3
 TILE_LENGTH = TILE_UNIT * TILE_UNIT
 TILE_AVAILABLE = frozenset({i+1 for i in range(TILE_LENGTH)})
-CANVAS_WIDTH = TILE_WIDTH * TILE_LENGTH + TILE_GAP
-CANVAS_HEIGHT = TILE_HEIGHT * TILE_LENGTH + TILE_GAP
 PAD = 20
 
 # square class
@@ -350,13 +348,16 @@ root.option_add("*font", ["メイリオ", 14])
 frame=tkinter.Frame()
 
 # Create a canvas
-canvas = tkinter.Canvas(frame, width=CANVAS_WIDTH, height=CANVAS_HEIGHT, bd=0, highlightthickness=0, relief="ridge")
+canvasWidth = TILE_WIDTH * board.length + TILE_GAP
+canvasHeight = TILE_HEIGHT * board.length + TILE_GAP
+
+canvas = tkinter.Canvas(frame, width=canvasWidth, height=canvasHeight, bd=0, highlightthickness=0, relief="ridge")
 canvas.grid(row=0, column=0, columnspan=2, padx=PAD, pady=PAD)
 canvas.create_rectangle(
     0,
     0,
-    CANVAS_WIDTH,
-    CANVAS_HEIGHT,
+    canvasWidth,
+    canvasHeight,
     fill="gray80",
     width=0,
     tag="board"
@@ -364,11 +365,11 @@ canvas.create_rectangle(
 
 # Gray border lines
 c = "gray"
-for i in range(TILE_LENGTH + 1) :
+for i in range(board.length + 1) :
     x = TILE_WIDTH * i + TILE_GAP * 0.5
     canvas.create_line(
         x, 0,
-        x, CANVAS_HEIGHT,
+        x, canvasHeight,
         fill=c,
         width=TILE_GAP,
         tag="board"
@@ -376,18 +377,18 @@ for i in range(TILE_LENGTH + 1) :
     y = TILE_HEIGHT * i + TILE_GAP * 0.5
     canvas.create_line(
         0, y,
-        CANVAS_WIDTH, y,
+        canvasWidth, y,
         fill=c,
         width=TILE_GAP,
         tag="board"
     )
 # Black border lines
 c = "black"
-for i in range(0, TILE_LENGTH + 1, TILE_UNIT):
+for i in range(0, board.length + 1, board.unit):
     x = TILE_WIDTH * i + TILE_GAP * 0.5
     canvas.create_line(
         x, 0,
-        x, CANVAS_HEIGHT,
+        x, canvasHeight,
         fill=c,
         width=TILE_GAP,
         tag="board"
@@ -395,7 +396,7 @@ for i in range(0, TILE_LENGTH + 1, TILE_UNIT):
     y = TILE_HEIGHT * i + TILE_GAP * 0.5
     canvas.create_line(
         0, y,
-        CANVAS_WIDTH, y,
+        canvasWidth, y,
         fill=c,
         width=TILE_GAP,
         tag="board"
