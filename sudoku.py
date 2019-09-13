@@ -338,6 +338,9 @@ def exampleBoard():
             board.square(col, row).assign(q[i], "fixed")
     return board
 
+# Create an example board
+board = exampleBoard()
+
 # Create a window
 root = tkinter.Tk()
 root.title("Sudoku")
@@ -552,9 +555,6 @@ def assignButtonOnClick():
         root.update()
 
 assignButton["command"] = assignButtonOnClick
-
-# Create an example board
-board = exampleBoard()
 
 # Draw the board
 board.draw(canvas)
