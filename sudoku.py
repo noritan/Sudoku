@@ -5,7 +5,6 @@ TILE_HEIGHT = 36
 TILE_FONT = ("monospace", 28)
 TILE_GAP = 2
 TILE_UNIT = 3
-TILE_LENGTH = TILE_UNIT * TILE_UNIT
 PAD = 20
 
 # square class
@@ -46,7 +45,7 @@ class Square:
             (self.col + 0.1) * TILE_WIDTH,
             (self.row + 0.1) * TILE_HEIGHT,
             (self.col + 0.9) * TILE_WIDTH,
-            (self.row + 0.9) * TILE_WIDTH,
+            (self.row + 0.9) * TILE_HEIGHT,
             fill=color,
             width=0,
             tag="square"
@@ -338,8 +337,8 @@ def exampleBoard():
     q = Qhard
     for i in range(len(q)):
         if q[i] != x:
-            row = int(i/TILE_LENGTH)
-            col = i % TILE_LENGTH
+            row = int(i / board.length)
+            col = i % board.length
             board.square(col, row).assign(q[i], "fixed")
     return board
 
@@ -478,7 +477,7 @@ def solve():
         solved = True
         # assign number to last positive
         for square in board.squareList():
-            if len(square.negative()) == TILE_LENGTH - 1:
+            if len(square.negative()) == board.length - 1:
                 square.assign(set(board.numberSet).difference(square.negative()).pop())
                 print("Last positive %d at (%d,%d)" % (square.number, square.col, square.row))
                 negateGroupOf(square)
@@ -490,7 +489,7 @@ def solve():
                 for square in group.squareList():
                     if number in square.negative():
                         nNegative = nNegative + 1
-                if nNegative == TILE_LENGTH - 1:
+                if nNegative == board.length - 1:
                     for square in group.squareList():
                         if not (number in square.negative()):
                             square.assign(number)
