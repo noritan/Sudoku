@@ -6,13 +6,13 @@ TILE_FONT = ("monospace", 28)
 TILE_GAP = 2
 TILE_UNIT = 3
 TILE_LENGTH = TILE_UNIT * TILE_UNIT
-TILE_AVAILABLE = frozenset({i+1 for i in range(TILE_LENGTH)})
 PAD = 20
 
 # square class
 class Square:
     # constructor
-    def __init__(self, col, row):
+    def __init__(self, board, col, row):
+        self.board = board
         self.col = col
         self.row = row
         self.unassign()
@@ -20,7 +20,7 @@ class Square:
     
     # Assign a number to the Square
     def assign(self, number, status="assigned"):
-        assert(number in TILE_AVAILABLE)
+        assert(number in self.board.numberSet)
         self.number = number
         self.status = status
 
@@ -84,11 +84,16 @@ class Square:
 
     def negative(self):
         return self.f_negative
+    
+    # Set all negative flags
+    def negateAll(self):
+        self.f_negative.update(self.board.numberSet)
 
 # cluster class
 class Cluster:
     #constructor
-    def __init__(self):
+    def __init__(self, board):
+        self.board = board
         self.f_squareList = list()
         self.linearGroup = None
         self.bulkGroup = None
@@ -99,7 +104,7 @@ class Cluster:
 
     # a set of elements never contained in this Cluster
     def negative(self):
-        negSet = set(TILE_AVAILABLE)
+        negSet = set(self.board.numberSet)
         for square in self.squareList():
             negSet &= square.negative()
         return negSet
@@ -154,12 +159,12 @@ class Board:
         self.f_squareList = list()
         for row in range(self.length):
             for col in range(self.length):
-                self.f_squareList.append(Square(col, row))
+                self.f_squareList.append(Square(self, col, row))
         # Construct horizontal cluster
         self.hClusterList = list()
         for row in range(self.length):
             for cbase in range(0, self.length, self.unit):
-                cluster = Cluster()
+                cluster = Cluster(self)
                 for col in range(cbase, cbase + self.unit):
                     cluster.append(self.square(col, row))
                 self.hClusterList.append(cluster)
@@ -169,7 +174,7 @@ class Board:
         self.vClusterList = list()
         for col in range(self.length):
             for rbase in range(0, self.length, self.unit):
-                cluster = Cluster()
+                cluster = Cluster(self)
                 for row in range(rbase, rbase + self.unit):
                     cluster.append(self.square(col, row))
                 self.vClusterList.append(cluster)
@@ -208,6 +213,8 @@ class Board:
                 self.vGroupList.append(group)
                 for cluster in group.clusterList():
                     cluster.bulkGroup = group
+        # Define a set of all number to se put
+        self.numberSet =frozenset({i+1 for i in range(self.length)})
 
     # return a Square on the board
     def square(self, col, row):
@@ -449,7 +456,7 @@ def setPivot(col, row):
 
 # add negative flag in a group
 def negateGroupOf(square):
-    square.negative().update(TILE_AVAILABLE)
+    square.negateAll()
     number = square.number
     for cluster in [square.hcluster, square.vcluster]:
         for g in cluster.groupList():
@@ -472,12 +479,12 @@ def solve():
         # assign number to last positive
         for square in board.squareList():
             if len(square.negative()) == TILE_LENGTH - 1:
-                square.assign(set(TILE_AVAILABLE).difference(square.negative()).pop())
+                square.assign(set(board.numberSet).difference(square.negative()).pop())
                 print("Last positive %d at (%d,%d)" % (square.number, square.col, square.row))
                 negateGroupOf(square)
                 solved = False
         # scan last positive in a group
-        for number in TILE_AVAILABLE:
+        for number in board.numberSet:
             for group in board.groupList():
                 nNegative = 0
                 for square in group.squareList():
@@ -493,7 +500,7 @@ def solve():
         # scan indirect negative cluster
         for cluster in board.clusterList():
             # linear group matching
-            negative = set(TILE_AVAILABLE)
+            negative = set(board.numberSet)
             for c in cluster.linearGroup.clusterList():
                 if c is not cluster:
                     negative &= c.negative()
@@ -507,7 +514,7 @@ def solve():
                                 s.negative().update(positive)
                                 solved = False
             # bulk group matching
-            negative = set(TILE_AVAILABLE)
+            negative = set(board.numberSet)
             for c in cluster.bulkGroup.clusterList():
                 if c is not cluster:
                     negative &= c.negative()
