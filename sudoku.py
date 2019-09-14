@@ -421,6 +421,8 @@ assignButton.grid(row=2, column=1, padx=PAD, pady=PAD)
 
 frame.pack()
 
+pivot = None
+
 # Callback from canvas
 def canvasOnClick(event):
     global pivot
@@ -435,20 +437,16 @@ def canvasOnClick(event):
         print("Frac %d, %d" % (x_frac, y_frac))
         pivot = None
         return
+    # Get Square information to Entry
     print("Clicked (%d, %d) %s" % (col, row, board.square(col,row).negative()))
-    setPivot(col, row)
-    
-
-canvas.bind("<Button-1>", canvasOnClick)
-
-def setPivot(col, row):
-    global pivot
     pivot = (col, row)
     square = board.squareAt(pivot)
     number = square.number
     assignEntry.delete(0, tkinter.END)
     if number is not None:
         assignEntry.insert(0, str(number))
+
+canvas.bind("<Button-1>", canvasOnClick)
 
 # add negative flag in a group
 def negateGroupOf(square):
@@ -537,9 +535,12 @@ solveButton["command"]=solveButtonOnClick
 
 # Callback from CLEAR button
 def clearButtonOnClick():
+    global pivot
     for square in board.squareList():
         if square.status == "assigned":
             square.unassign()
+    pivot = None
+    assignEntry.delete(0, tkinter.END)
     board.resetNegative()
     board.draw(canvas)
     root.update()
