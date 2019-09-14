@@ -421,6 +421,22 @@ assignButton.grid(row=2, column=1, padx=PAD, pady=PAD)
 
 frame.pack()
 
+class Pivot:
+    def __init__(self):
+        self.clear()
+    
+    def isAssigned(self):
+        return self.f_location is not None
+    
+    def clear(self):
+        self.f_location = None
+
+    def col(self):
+        return self.f_location[0]
+
+    def row(self):
+        return self.f_location[1]
+    
 pivot = None
 
 # Callback from canvas
