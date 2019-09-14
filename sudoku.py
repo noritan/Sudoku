@@ -231,9 +231,8 @@ class Board:
     # draw the board on the canvas
     def draw(self, canvas):
         canvas.delete("square")
-        for row in range(self.length):
-            for col in range(self.length):
-                self.square(col, row).draw(canvas)
+        for square in self.squareList():
+            square.draw(canvas)
     
     # return combined Group list
     def groupList(self):
@@ -428,10 +427,8 @@ def canvasOnClick(event):
     x = event.x + TILE_GAP
     y = event.y + TILE_GAP
 
-    col = int(x / TILE_WIDTH)
-    x_frac = x % TILE_WIDTH
-    row = int(y / TILE_HEIGHT)
-    y_frac = y % TILE_HEIGHT
+    col, x_frac = divmod(x, TILE_WIDTH)
+    row, y_frac = divmod(y, TILE_HEIGHT)
     if (col < 0 or col >= board.length or row < 0 or row >= board.length):
         return
     if x_frac < TILE_GAP * 3 or y_frac < TILE_GAP * 3:
