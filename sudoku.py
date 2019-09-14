@@ -219,9 +219,8 @@ class Board:
     def square(self, col, row):
         return self.f_squareList[row*self.length+col]
 
-    def squareAt(self, position):
-        (col, row) = position
-        return self.square(col, row)
+    def squareAt(self, pivot):
+        return self.square(pivot.col(), pivot.row())
 
     # return a serial list of Square
     def squareList(self):
@@ -431,17 +430,19 @@ class Pivot:
     def clear(self):
         self.f_location = None
 
+    def set(self, col, row):
+        self.f_location = (col, row)
+
     def col(self):
         return self.f_location[0]
 
     def row(self):
         return self.f_location[1]
     
-pivot = None
+pivot = Pivot()
 
 # Callback from canvas
 def canvasOnClick(event):
-    global pivot
     x = event.x + TILE_GAP
     y = event.y + TILE_GAP
 
@@ -451,11 +452,11 @@ def canvasOnClick(event):
         return
     if x_frac < TILE_GAP * 3 or y_frac < TILE_GAP * 3:
         print("Frac %d, %d" % (x_frac, y_frac))
-        pivot = None
+        pivot.clear()
         return
     # Get Square information to Entry
     print("Clicked (%d, %d) %s" % (col, row, board.square(col,row).negative()))
-    pivot = (col, row)
+    pivot.set(col, row)
     square = board.squareAt(pivot)
     number = square.number
     assignEntry.delete(0, tkinter.END)
@@ -551,11 +552,10 @@ solveButton["command"]=solveButtonOnClick
 
 # Callback from CLEAR button
 def clearButtonOnClick():
-    global pivot
     for square in board.squareList():
         if square.status == "assigned":
             square.unassign()
-    pivot = None
+    pivot.clear()
     assignEntry.delete(0, tkinter.END)
     board.resetNegative()
     board.draw(canvas)
@@ -565,8 +565,7 @@ clearButton["command"] = clearButtonOnClick
 
 # Callback from ASSIGN button
 def assignButtonOnClick():
-    global pivot
-    if pivot is not None:
+    if pivot.isAssigned():
         try:
             number = int(assignEntry.get())
             board.squareAt(pivot).assign(number)
