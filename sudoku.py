@@ -88,6 +88,13 @@ class Square:
     def negateAll(self):
         self.f_negative.update(self.board.numberSet)
 
+    # add negative flag in groups
+    def negateGroup(self):
+        self.negateAll()
+        for cluster in [self.hcluster, self.vcluster]:
+            for group in cluster.groupList():
+                group.addNegative(self.number)
+
 # cluster class
 class Cluster:
     #constructor
@@ -484,14 +491,6 @@ def canvasOnClick(event):
 
 canvas.bind("<Button-1>", canvasOnClick)
 
-# add negative flag in a group
-def negateGroupOf(square):
-    square.negateAll()
-    number = square.number
-    for cluster in [square.hcluster, square.vcluster]:
-        for g in cluster.groupList():
-            g.addNegative(number)
-
 # Solver function
 def solve():
     # Clear all negative set
@@ -499,9 +498,9 @@ def solve():
     # initialize negative set
     for square in board.squareList():
         if square.status == "fixed":
-            negateGroupOf(square)
+            square.negateGroup()
         elif square.status == "assigned":
-            negateGroupOf(square)
+            square.negateGroup()
     # 
     solved = False  # Flag indicating solver completion
     while not solved:
@@ -511,7 +510,7 @@ def solve():
             if len(square.negative()) == board.length - 1:
                 square.assign(set(board.numberSet).difference(square.negative()).pop())
                 print("Last positive %d at (%d,%d)" % (square.number, square.col, square.row))
-                negateGroupOf(square)
+                square.negateGroup()
                 solved = False
         # scan last positive in a group
         for number in board.numberSet:
@@ -525,7 +524,7 @@ def solve():
                         if not (number in square.negative()):
                             square.assign(number)
                             print("Last in group %d at (%d,%d)" % (square.number, square.col, square.row))
-                            negateGroupOf(square)
+                            square.negateGroup()
                             solved = False
         # scan indirect negative cluster
         for cluster in board.clusterList():
