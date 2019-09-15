@@ -251,10 +251,22 @@ class Board:
         for square in self.squareList():
             square.resetNegative()
 
+    # Unassign all "assigned" Square
     def unassign(self):
         for square in self.squareList():
             if square.status == "assigned":
                 square.unassign()
+
+    # Find a free Square with longest negative
+    def findFreeSquare(self):
+        found = None
+        nNegative = 0
+        for square in self.squareList():
+            if square.status == "free":
+                if len(square.negative()) > nNegative:
+                    found = square
+                    nNegative = len(square.negative())
+        return found
 
 # Initialize with example board
 def exampleBoard():
@@ -565,71 +577,112 @@ def solveButtonOnClick():
 
 solveButton["command"]=solveButtonOnClick
 
-def findFreeSquare(board):
-    # Find a free Square with longest negative
-    s = None
-    nNegative = 0
-    for square in board.squareList():
-        if square.status == "free":
-            if len(square.negative()) > nNegative:
-                s = square
-                nNegative = len(square.negative())
-    return (s, list(set(board.numberSet) - s.negative()))
+# Solution class declaration
+class Solution:
+    # construct an instance with the first branch
+    def __init__(self, board):
+        self.f_solutionStep = list()
+        self.appendStep(board)
+
+    # Append a new step
+    def appendStep(self, board):
+        freeSquare = board.findFreeSquare()
+        self.f_solutionStep.append(
+            (freeSquare, list(set(board.numberSet) - freeSquare.negative()))
+        )
+
+    # Prune the last step
+    def pruneStep(self):
+        self.f_solutionStep.pop(-1)
+
+    # Prune a leaf from the solution
+    def pruneLeaf(self):
+        while not self.isEmpty():
+            (square, choice) = self.lastStep()
+            # Prune first choice
+            choice.pop(0)
+            if len(choice) > 0:
+                # Prune finished
+                break
+            # Prune last step
+            self.pruneStep()
+
+    # return a list of steps
+    def stepList(self):
+        for step in self.f_solutionStep:
+            yield step
+    
+    # return the last step
+    def lastStep(self):
+        return self.f_solutionStep[-1]
+    
+    # true if solution steps are empty
+    def isEmpty(self):
+        return not bool(self.f_solutionStep)
+
+    # return a string description of the last step
+    def lastStepString(self):
+        (square, choice) = self.lastStep()
+        return "%s(%d,%d)=%s" % (
+                " " * len(self.f_solutionStep),
+                square.col, square.row,
+                str(choice[0])
+            )
+
+    # return a snapshot of current solution
+    def snapshot(self):
+        return [
+            ((square.col, square.row), choice[0])
+            for (square, choice) in self.stepList()
+        ]
 
 # Callback from ASSUME button
 def assumeButtonOnClick():
     status = solve()
     if status == "UNRESOLVED":
-        solution = [
-            findFreeSquare(board)
-        ]
+        solution = Solution(board)
         solutionList = list()
         while True:
             # Try a solution
             board.unassign()
             board.resetNegative()
-            for (square, choice) in solution:
+            for (square, choice) in solution.stepList():
 #                print("Assume (%d,%d) as %s" % (square.col, square.row, str(choice[0])))
                 square.assign(choice[0])
             status = solve()
             board.draw(canvas)
             root.update()
-            for square in solution:
-                print(" ", end="")
-            (square, choice) = solution[-1]
-            print("(%d,%d)=%s (%s)" % (square.col, square.row, str(choice[0]), status))            
+            # Show last step as LOG
+            print("%s (%s)" % (solution.lastStepString(), status))
             if status == "SOLVED":
-                # Record the leaf
-                solutionList.append(
-                    [((square.col, square.row), choice[0]) for (square, choice) in solution]
-                )
-                # Drop a leaf
-                while len(solution) > 0:
-                    lastStep = solution[-1]
-                    lastStep[1].pop(0)
-                    if len(lastStep[1]) > 0:
-                        break
-                    solution.pop(-1)
-                if len(solution) <= 0:
+                # Record the solution
+                solutionList.append(solution.snapshot())
+                # Prune a leaf
+                solution.pruneLeaf()
+                if solution.isEmpty():
+                    # All solutions are scanned
                     break
             elif status == "CONFLICTED":
-                # Drop a leaf
-                while len(solution) > 0:
-                    lastStep = solution[-1]
-                    lastStep[1].pop(0)
-                    if len(lastStep[1]) > 0:
-                        break
-                    solution.pop(-1)
-                if len(solution) <= 0:
+                # Prune a leaf
+                solution.pruneLeaf()
+                if solution.isEmpty():
+                    # All solutions are scanned
                     break
             elif status == "UNRESOLVED":
                 # Select a new step
-                solution.append(findFreeSquare(board))
+                solution.appendStep(board)
         print("SOLUTIONS")
         n = 0
-        for solution in solutionList:
-            print("#%d %s" % (n, solution))
+        for steps in solutionList:
+            print("#%d %s" % (n, steps))
             n = n + 1
+        # Playback the first Snapshot
+        if solutionList:
+            board.unassign()
+            board.resetNegative()
+            for ((col, row), number) in solutionList[0]:
+                board.square(col, row).assign(number)
+            status = solve()
     board.draw(canvas)
     root.update()
 
