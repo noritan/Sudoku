@@ -251,6 +251,11 @@ class Board:
         for square in self.squareList():
             square.resetNegative()
 
+    def unassign(self):
+        for square in self.squareList():
+            if square.status == "assigned":
+                square.unassign()
+
 # Initialize with example board
 def exampleBoard():
     x = -1
@@ -356,7 +361,7 @@ canvasWidth = TILE_WIDTH * board.length + TILE_GAP
 canvasHeight = TILE_HEIGHT * board.length + TILE_GAP
 
 canvas = tkinter.Canvas(frame, width=canvasWidth, height=canvasHeight, bd=0, highlightthickness=0, relief="ridge")
-canvas.grid(row=0, column=0, columnspan=2, padx=PAD, pady=PAD)
+canvas.grid(row=0, column=0, columnspan=3, padx=PAD, pady=PAD)
 canvas.create_rectangle(
     0,
     0,
@@ -406,11 +411,13 @@ for i in range(0, board.length + 1, board.unit):
         tag="board"
     )
 
-# Solve button
+# SOLVE, ASSUME, CLEAR Buttons
 solveButton = tkinter.Button(frame, text="SOLVE")
 solveButton.grid(row=1, column=0, padx=PAD, pady=PAD)
+assumeButton = tkinter.Button(frame, text="ASSUME")
+assumeButton.grid(row=1, column=1, padx=PAD, pady=PAD)
 clearButton = tkinter.Button(frame, text="CLEAR")
-clearButton.grid(row=1, column=1, padx=PAD, pady=PAD)
+clearButton.grid(row=1, column=2, padx=PAD, pady=PAD)
 
 # Assign field and button
 assignEntry = tkinter.Entry(frame, width=2)
@@ -540,23 +547,99 @@ def solve():
                                 solved = False
                          
     # Solved or no other solutions
-    print("SOLVED")
+    status = "SOLVED"
+    for square in board.squareList():
+        if square.status == "free":
+            if len(square.negative()) == board.length:
+                return "CONFLICTED"
+            else:
+                status = "UNRESOLVED"
+    return status
 
 # Callback from SOLVE button
 def solveButtonOnClick():
-    solve()
+    status = solve()
     board.draw(canvas)
     root.update()
+    print(status)
 
 solveButton["command"]=solveButtonOnClick
 
+def findFreeSquare(board):
+    # Find a free Square with longest negative
+    s = None
+    nNegative = 0
+    for square in board.squareList():
+        if square.status == "free":
+            if len(square.negative()) > nNegative:
+                s = square
+                nNegative = len(square.negative())
+    return (s, list(set(board.numberSet) - s.negative()))
+
+# Callback from ASSUME button
+def assumeButtonOnClick():
+    status = solve()
+    if status == "UNRESOLVED":
+        solution = [
+            findFreeSquare(board)
+        ]
+        solutionList = list()
+        while True:
+            # Try a solution
+            board.unassign()
+            board.resetNegative()
+            for (square, choice) in solution:
+#                print("Assume (%d,%d) as %s" % (square.col, square.row, str(choice[0])))
+                square.assign(choice[0])
+            status = solve()
+            board.draw(canvas)
+            root.update()
+            for square in solution:
+                print(" ", end="")
+            (square, choice) = solution[-1]
+            print("(%d,%d)=%s (%s)" % (square.col, square.row, str(choice[0]), status))            
+            if status == "SOLVED":
+                # Record the leaf
+                solutionList.append(
+                    [((square.col, square.row), choice[0]) for (square, choice) in solution]
+                )
+                # Drop a leaf
+                while len(solution) > 0:
+                    lastStep = solution[-1]
+                    lastStep[1].pop(0)
+                    if len(lastStep[1]) > 0:
+                        break
+                    solution.pop(-1)
+                if len(solution) <= 0:
+                    break
+            elif status == "CONFLICTED":
+                # Drop a leaf
+                while len(solution) > 0:
+                    lastStep = solution[-1]
+                    lastStep[1].pop(0)
+                    if len(lastStep[1]) > 0:
+                        break
+                    solution.pop(-1)
+                if len(solution) <= 0:
+                    break
+            elif status == "UNRESOLVED":
+                # Select a new step
+                solution.append(findFreeSquare(board))
+        print("SOLUTIONS")
+        n = 0
+        for solution in solutionList:
+            print("#%d %s" % (n, solution))
+            n = n + 1
+    board.draw(canvas)
+    root.update()
+
+assumeButton["command"]=assumeButtonOnClick
+
 # Callback from CLEAR button
 def clearButtonOnClick():
-    for square in board.squareList():
-        if square.status == "assigned":
-            square.unassign()
     pivot.clear()
     assignEntry.delete(0, tkinter.END)
+    board.unassign()
     board.resetNegative()
     board.draw(canvas)
     root.update()
