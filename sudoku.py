@@ -14,6 +14,8 @@ class Square:
         self.board = board
         self.col = col
         self.row = row
+        self.hcluster = None
+        self.vcluster = None
         self.unassign()
         self.resetNegative()
     
