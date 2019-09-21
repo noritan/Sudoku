@@ -548,6 +548,8 @@ assignEntry = tkinter.Entry(frame, width=2)
 assignEntry.grid(row=2, column=0, padx=PAD, pady=PAD)
 assignButton = tkinter.Button(frame, text="ASSIGN")
 assignButton.grid(row=2, column=1, padx=PAD, pady=PAD)
+fixButton = tkinter.Button(frame, text="FIX")
+fixButton.grid(row=2, column=2, padx=PAD, pady=PAD)
 
 frame.pack()
 
@@ -739,6 +741,19 @@ def assignButtonOnClick():
         root.update()
 
 assignButton["command"] = assignButtonOnClick
+
+# Callback from FIX button
+def fixButtonOnClick():
+    if pivot.isAssigned():
+        try:
+            number = int(assignEntry.get())
+            board.squareAt(pivot).assign(number, "fixed")
+        except ValueError:
+            board.squareAt(pivot).unassign()
+        board.draw(canvas)
+        root.update()
+
+fixButton["command"] = fixButtonOnClick
 
 # Draw the board
 board.draw(canvas)
