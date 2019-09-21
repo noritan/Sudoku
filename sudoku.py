@@ -154,6 +154,13 @@ class Group:
             for square in cluster.squareList():
                 yield square
 
+    # the list of "free" Square in this Group
+    def freeSquareList(self):
+        for cluster in self.clusterList():
+            for square in cluster.squareList():
+                if square.status == "free":
+                    yield square
+
 # board class
 class Board:
     # constructor
@@ -234,6 +241,12 @@ class Board:
         for square in self.f_squareList:
             yield square
 
+    # return a serial list of "free" Square
+    def freeSquareList(self):
+        for square in self.f_squareList:
+            if square.status == "free":
+                yield square
+
     # draw the board on the canvas
     def draw(self, canvas):
         canvas.delete("square")
@@ -274,6 +287,96 @@ class Board:
                     found = square
                     nNegative = len(square.negative())
         return found
+
+    # Solver function
+    def solve(self):
+        # Clear all negative set
+        self.resetNegative()
+        # initialize negative set
+        for square in self.squareList():
+            if square.status == "fixed":
+                square.negateGroup()
+            elif square.status == "assigned":
+                square.negateGroup()
+        # Attempt solver algorithm as possible
+        solved = False  # Flag indicating solver completion
+        while not solved:
+            solved = True
+            # Soler #1: Last positive
+            # When the Negative set of a Square has all Numbers except one,
+            # the Square is assigned to the last positive Number not contained in the Negative set.
+            for square in self.freeSquareList():
+                nPositive = self.length - len(square.negative())
+                if nPositive == 0:
+                    return "CONFLICTED"
+                elif nPositive == 1:
+                    square.assign(set(self.numberSet).difference(square.negative()).pop())
+                    print("Last positive %d at (%d,%d)" % (square.number, square.col, square.row))
+                    square.negateGroup()
+                    solved = False
+            # Solver #2: Last positive in group
+            # When all Square in a Group has a Number in their Negative set except a Square,
+            # the Square not having the Number in its Negative set is assigned to the Number.
+            for number in self.numberSet:
+                for group in self.groupList():
+                    nPositive = 0
+                    for square in group.freeSquareList():
+                        if not (number in square.negative()):
+                            nPositive = nPositive + 1
+                    if nPositive == 1:
+                        for square in group.freeSquareList():
+                            if not (number in square.negative()):
+                                square.assign(number)
+                                print("Last in group %d at (%d,%d)" % (square.number, square.col, square.row))
+                                square.negateGroup()
+                                solved = False
+            # Solver #3: Indirect negative cluster
+            # When all Cluster except one in a Group has a Number in their Negative set,
+            # other Cluster in the other Group of the last Cluster have the Number in their Negative set
+            for cluster in self.clusterList():
+                # Attempt to linear group
+                # Specify Numbers contained in Negative sets of other Clusters in a Group as negative.
+                negative = set(self.numberSet)
+                for otherCluster in cluster.linearGroup.clusterList():
+                    if otherCluster is not cluster:
+                        negative &= otherCluster.negative()
+                # Negate the positive Numbers in the other Cluster in another Group.
+                positive = negative - cluster.negative()
+                if len(positive) > 0:
+                    for otherCluster in cluster.bulkGroup.clusterList():
+                        if otherCluster is not cluster:
+                            for square in otherCluster.squareList():
+                                if len(positive - square.negative()) > 0:
+                                    print("Negate %s at bulk(%d,%d)" % (str(positive), square.col, square.row))
+                                    square.negative().update(positive)
+                                    solved = False
+                # Attempt to bulk group
+                # Specify Numbers contained in Negative sets of other Clusters in a Group as negative.
+                negative = set(self.numberSet)
+                for otherCluster in cluster.bulkGroup.clusterList():
+                    if otherCluster is not cluster:
+                        negative &= otherCluster.negative()
+                # Negate the positive Numbers in the other Cluster in another Group.
+                positive = negative - cluster.negative()
+                if len(positive) > 0:
+                    for otherCluster in cluster.linearGroup.clusterList():
+                        if otherCluster is not cluster:
+                            for square in otherCluster.squareList():
+                                if len(positive - square.negative()) > 0:
+                                    print("Negate %s at linear(%d,%d)" % (str(positive), square.col, square.row))
+                                    square.negative().update(positive)
+                                    solved = False                            
+        # Check the status of this board
+        status = "SOLVED"
+        for square in self.squareList():
+            if square.status == "free":
+                if len(square.negative()) == self.length:
+                    # No possible solution for the Square
+                    return "CONFLICTED"
+                else:
+                    # Found a unresolved Square
+                    status = "UNRESOLVED"
+        return status
 
 # Initialize with example board
 def exampleBoard():
@@ -491,85 +594,9 @@ def canvasOnClick(event):
 
 canvas.bind("<Button-1>", canvasOnClick)
 
-# Solver function
-def solve():
-    # Clear all negative set
-    board.resetNegative()
-    # initialize negative set
-    for square in board.squareList():
-        if square.status == "fixed":
-            square.negateGroup()
-        elif square.status == "assigned":
-            square.negateGroup()
-    # 
-    solved = False  # Flag indicating solver completion
-    while not solved:
-        solved = True
-        # assign number to last positive
-        for square in board.squareList():
-            if len(square.negative()) == board.length - 1:
-                square.assign(set(board.numberSet).difference(square.negative()).pop())
-                print("Last positive %d at (%d,%d)" % (square.number, square.col, square.row))
-                square.negateGroup()
-                solved = False
-        # scan last positive in a group
-        for number in board.numberSet:
-            for group in board.groupList():
-                nNegative = 0
-                for square in group.squareList():
-                    if number in square.negative():
-                        nNegative = nNegative + 1
-                if nNegative == board.length - 1:
-                    for square in group.squareList():
-                        if not (number in square.negative()):
-                            square.assign(number)
-                            print("Last in group %d at (%d,%d)" % (square.number, square.col, square.row))
-                            square.negateGroup()
-                            solved = False
-        # scan indirect negative cluster
-        for cluster in board.clusterList():
-            # linear group matching
-            negative = set(board.numberSet)
-            for c in cluster.linearGroup.clusterList():
-                if c is not cluster:
-                    negative &= c.negative()
-            positive = negative - cluster.negative()
-            if len(positive) > 0:
-                for c in cluster.bulkGroup.clusterList():
-                    if c is not cluster:
-                        for s in c.squareList():
-                            if len(positive - s.negative()) > 0:
-                                print("Negate %s at bulk(%d,%d)" % (str(positive), s.col, s.row))
-                                s.negative().update(positive)
-                                solved = False
-            # bulk group matching
-            negative = set(board.numberSet)
-            for c in cluster.bulkGroup.clusterList():
-                if c is not cluster:
-                    negative &= c.negative()
-            positive = negative - cluster.negative()
-            if len(positive) > 0:
-                for c in cluster.linearGroup.clusterList():
-                    if c is not cluster:
-                        for s in c.squareList():
-                            if len(positive - s.negative()) > 0:
-                                print("Negate %s at linear(%d,%d)" % (str(positive), s.col, s.row))
-                                s.negative().update(positive)
-                                solved = False
-                         
-    # Solved or no other solutions
-    status = "SOLVED"
-    for square in board.squareList():
-        if square.status == "free":
-            if len(square.negative()) == board.length:
-                return "CONFLICTED"
-            else:
-                status = "UNRESOLVED"
-    return status
-
 # Callback from SOLVE button
 def solveButtonOnClick():
-    status = solve()
+    status = board.solve()
     board.draw(canvas)
     root.update()
     print(status)
@@ -637,7 +664,7 @@ class Solution:
 
 # Callback from ASSUME button
 def assumeButtonOnClick():
-    status = solve()
+    status = board.solve()
     if status == "UNRESOLVED":
         solution = Solution(board)
         solutionList = list()
@@ -648,7 +675,7 @@ def assumeButtonOnClick():
             for (square, choice) in solution.stepList():
 #                print("Assume (%d,%d) as %s" % (square.col, square.row, str(choice[0])))
                 square.assign(choice[0])
-            status = solve()
+            status = board.solve()
             board.draw(canvas)
             root.update()
             # Show last step as LOG
@@ -670,18 +697,18 @@ def assumeButtonOnClick():
             elif status == "UNRESOLVED":
                 # Select a new step
                 solution.appendStep(board)
-        print("SOLUTIONS")
-        n = 0
-        for steps in solutionList:
-            print("#%d %s" % (n, steps))
-            n = n + 1
         # Playback the first Snapshot
         if solutionList:
             board.unassign()
             board.resetNegative()
             for ((col, row), number) in solutionList[0]:
                 board.square(col, row).assign(number)
-            status = solve()
+            status = board.solve()
+        print("ALL SOLUTIONS")
+        n = 0
+        for steps in solutionList:
+            print("#%d %s" % (n, steps))
+            n = n + 1
     board.draw(canvas)
     root.update()
 
