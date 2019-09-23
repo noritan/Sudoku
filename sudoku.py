@@ -4,7 +4,7 @@ TILE_WIDTH = 36
 TILE_HEIGHT = 36
 TILE_FONT = ("monospace", 28)
 TILE_GAP = 2
-TILE_UNIT = 3
+TILE_UNIT = 4
 PAD = 20
 
 # square class
@@ -55,13 +55,20 @@ class Square:
 
     SQUARE_COLOR = [
         "#5533FF",
-        "#5533CC",
+        "#5533DD",
+        "#5533BB",
+        "#5533AA",
         "#553399",
+        "#553388",
+        "#553377",
         "#553366",
-        "#553355",
-        "#663333",
-        "#993333",
-        "#CC3333",
+        "#663355",
+        "#773355",
+        "#883355",
+        "#993355",
+        "#AA3355",
+        "#BB3355",
+        "#DD3355",
         "#FF3355",
         "#000000"
     ]
@@ -229,7 +236,7 @@ class Board:
                 for cluster in group.clusterList():
                     cluster.bulkGroup = group
         # Define a set of all number to se put
-        self.numberSet =frozenset({i+1 for i in range(self.length)})
+        self.numberSet =frozenset({i for i in range(self.length)})
 
     # return a Square on the board
     def square(self, col, row):
@@ -383,6 +390,8 @@ class Board:
 # Initialize with example board
 def exampleBoard():
     x = -1
+    (a,b,c,d,e,f) = (10,11,12,13,14,15)
+
     Q1 = [
         x,x,x,3,x,4,x,x,x,
         x,x,x,x,7,x,9,x,x,
@@ -460,8 +469,44 @@ def exampleBoard():
         x,x,4,x,x,x,x,3,x,
         x,x,x,x,x,9,7,x,x
     ]
+    Qhex = [
+        0,x,x,8,a,x,x,x,c,x,x,x,e,x,x,4,
+        x,1,9,x,x,b,x,x,x,d,x,x,x,f,5,x,
+        x,a,2,x,x,x,c,x,x,x,e,x,x,6,0,x,
+        b,x,x,3,x,x,x,d,x,x,x,f,7,x,x,1,
+        2,x,x,x,4,x,x,x,e,x,x,8,0,x,x,c,
+        x,3,x,x,x,5,x,x,x,f,9,x,x,1,d,x,
+        x,x,4,x,x,x,6,x,x,a,0,x,x,e,2,x,
+        x,x,x,5,x,x,x,7,b,x,x,1,f,x,x,3,
+        4,x,x,a,6,x,x,c,8,x,x,x,2,x,x,x,
+        x,5,b,x,x,7,d,x,x,9,x,x,x,3,x,x,
+        x,c,6,x,x,e,8,x,x,x,a,x,x,x,4,x,
+        d,x,x,7,f,x,x,9,x,x,x,b,x,x,x,5,
+        6,x,x,0,8,x,x,x,a,x,x,4,c,x,x,2,
+        x,7,1,x,x,9,x,x,x,b,5,x,x,d,3,x,
+        x,2,8,x,x,x,a,x,x,6,c,x,x,4,e,x,
+        3,x,x,9,x,x,x,b,7,x,x,d,5,x,x,f
+    ]
+    Qhex_easy = [
+        0,d,5,8,a,x,x,x,c,1,x,6,e,x,x,4,
+        x,1,9,4,x,b,x,x,x,d,x,x,x,f,5,x,
+        x,a,2,f,x,x,c,x,x,x,e,3,b,6,0,x,
+        b,x,x,3,x,x,x,d,x,x,x,f,7,x,x,1,
+        2,x,x,x,4,x,x,x,e,x,x,8,0,x,x,c,
+        x,3,x,x,x,5,x,x,x,f,9,x,x,1,d,x,
+        x,x,4,x,x,x,6,x,x,a,0,x,x,e,2,x,
+        x,x,x,5,x,x,x,7,b,x,x,1,f,x,x,3,
+        4,x,x,a,6,x,x,c,8,x,x,x,2,x,x,x,
+        x,5,b,x,x,7,d,x,x,9,x,x,x,3,x,x,
+        x,c,6,x,x,e,8,x,x,x,a,x,x,x,4,x,
+        d,x,x,7,f,x,x,9,x,x,x,b,x,x,x,5,
+        6,x,x,0,8,x,x,x,a,x,x,4,c,x,x,2,
+        x,7,1,x,x,9,x,x,x,b,5,x,x,d,3,x,
+        x,2,8,x,x,x,a,x,x,6,c,x,x,4,e,x,
+        3,x,x,9,x,x,x,b,7,x,x,d,5,x,x,f
+    ]
     board = Board(TILE_UNIT)
-    q = Qhard
+    q = Qhex
     for i in range(len(q)):
         if q[i] != x:
             row = int(i / board.length)
